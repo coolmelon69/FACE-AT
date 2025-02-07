@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capturing Images</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #fff;
+        }
+        .video-container {
+            width: 80%;
+            max-width: 800px;
+            border: 2px solid #fff;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .video-container img {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="video-container">
+        <img src="{{ url_for('video_feed', sid=sid, name=name) }}" alt="Live Camera Feed">
+    </div>
+</body>
+</html>

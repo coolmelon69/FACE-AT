@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Attendance</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #ffffff);
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            margin-top: 50px;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .form-select, .btn-primary {
+            border-radius: 8px;
+        }
+
+        .card {
+            background: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border: none;
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: auto;
+            padding-top: 40px;
+            padding-bottom: 20px;
+        }
+
+        .badge {
+            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .back-link {
+            margin-top: 15px;
+            align-items: center;
+            text-align: center;
+        }
+
+        .back-link a {
+            text-decoration: none;
+            
+            color: #007bff;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .back-link a:hover {
+            color: #0056b3;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            position: relative;
+        }
+
+        .stat-card img {
+            width: 50px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+
+        .stat-card h3 {
+            font-size: 20px;
+            margin: 0;
+        }
+
+        .stat-card span {
+            font-size: 16px;
+            color: #666;
+        }
+
+        .download-btn {
+            margin-top: 15px;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>View Attendance Records</h1>
+        <div class="card">
+            <form method="POST" action="{{ url_for('view_sessions') }}">
+                <div class="mb-3">
+                    <label for="session" class="form-label">Select Session</label>
+                    <select id="session" name="session" class="form-select" required>
+                        <option value="">-- Select a Session --</option>
+                        {% for session in sessions %}
+                        <option value="{{ session.SessionID }}">
+                            {{ session.Display }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">View Attendance</button>
+                <div class="back-link">
+                    <a href="{% if session['role'] == 'admin' %}{{ url_for('admin_dashboard') }}{% elif session['role'] == 'lecturer' %}{{ url_for('lecturer_dashboard') }}{% else %}{{ url_for('index') }}{% endif %}">
+                        ← Back to Home </a>
+                </div>
+            </form>
+        </div>
+
+        {% if attendance_data %}
+        
+            {% if attendance_data %}
+            <div class="mt-5">
+                <h2>Attendance for Session: {{ selected_session }}</h2>
+                <form method="POST" action="{{ url_for('update_attendance', session_id=selected_session) }}">
+                    <div class="row mt-4">
+                        <!-- Attendance Table -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Student ID</th>
+                                            <th>Name</th>
+                                            <th>Section</th>
+                                            <th>Attendance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for record in attendance_data %}
+                                        <tr>
+                                            <td>{{ record.StudentID }}</td>
+                                            <td>{{ record.Name }}</td>
+                                            <td>{{ record.Section }}</td>
+                                            <td>
+                                                <select name="attendance_status[{{ record.StudentID }}]" class="form-select">
+                                                    <option value="1" {% if record.Attended == 1 %}selected{% endif %}>Present</option>
+                                                    <option value="0" {% if record.Attended == 0 %}selected{% endif %}>Absent</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                <button type="submit" class="btn btn-success mt-3">Save Changes</button>
+                            </div>
+                        </div>
+        
+                        <!-- Donut Chart -->
+                        <div class="col-md-6 text-center">
+                            <div class="stats-row">
+                                <div class="stat-card">
+                                    <img src="{{ url_for('static', filename='images/total.png') }}" alt="Total Students Icon">
+                                    <h3>{{ total_students }}</h3>
+                                    <span>Total Students</span>
+                                </div>
+                                <div class="stat-card">
+                                    <img src="{{ url_for('static', filename='images/attended.webp') }}" alt="Students Attended Icon">
+                                    <h3>{{ attended_count }}</h3>
+                                    <span>Students Attended</span>
+                                </div>
+                                <div class="stat-card">
+                                    <img src="{{ url_for('static', filename='images/absent.png') }}" alt="Students Absent Icon">
+                                    <h3>{{ absent_count }}</h3>
+                                    <span>Students Absent</span>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="attendanceChart"></canvas>
+                            </div>
+                            
+                        
+                        </div>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+        
+        {% endif %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash-messages">
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+    </div>
+
+    <script>
+        {% if attendance_data %}
+        const ctx = document.getElementById('attendanceChart').getContext('2d');
+        const attendedPercentage = ({{ attended_count }} / {{ total_students }} * 100).toFixed(2);
+
+        const attendanceChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Present', 'Absent'],
+                datasets: [{
+                    data: [{{ attended_count }}, {{ absent_count }}],
+                    backgroundColor: ['#28a745', '#dc3545'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = {{ total_students }};
+                                const percentage = (context.raw / total * 100).toFixed(2);
+                                return `${context.label}: ${context.raw} (${percentage}%)`;
+                            }
+                        }
+                    },
+                    legend: {
+                        display: true,
+                        position: 'bottom'
+                    }
+                },
+                maintainAspectRatio: false,
+                cutout: '70%', // Adjust the inner radius for the donut
+            }
+        });
+
+        // Add percentage text and "Students Attended" text in the middle
+        Chart.register({
+            id: 'centerTextPlugin',
+            beforeDraw(chart) {
+                const ctx = chart.ctx;
+                const width = chart.width;
+                const height = chart.height;
+
+                ctx.restore();
+
+                // Percentage text
+                const fontSizePercentage = (height / 8).toFixed(2);
+                ctx.font = `${fontSizePercentage}px Arial`;
+                ctx.textBaseline = 'middle';
+
+                const percentageText = `${attendedPercentage}%`;
+                const percentageTextX = Math.round((width - ctx.measureText(percentageText).width) / 2);
+                const percentageTextY = height / 2 - 10;
+
+                ctx.fillStyle = '#333';
+                ctx.fillText(percentageText, percentageTextX, percentageTextY);
+
+                // "Students Attended" text
+                const fontSizeLabel = (height / 16).toFixed(2);
+                ctx.font = `${fontSizeLabel}px Arial`;
+
+                const labelText = 'Students Attended';
+                const labelTextX = Math.round((width - ctx.measureText(labelText).width) / 2);
+                const labelTextY = height / 2 + 20;
+
+                ctx.fillText(labelText, labelTextX, labelTextY);
+
+                ctx.save();
+            }
+        });
+
+        attendanceChart.update();
+        {% endif %}
+    </script>
+</body>
+</html>

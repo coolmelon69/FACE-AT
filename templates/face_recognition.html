@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Recognition Attendance</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/modern-normalize/1.1.0/modern-normalize.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #52a3e1, #ffffff);
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 420px;
+            width: 100%;
+            background: #fff;
+            padding: 30px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .logo img {
+            width: 120px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            margin: 10px 0 20px;
+            color: #333;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 8px;
+            display: block;
+            text-align: left;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:disabled {
+            background-color: #aaa;
+            cursor: not-allowed;
+        }
+
+        .feedback {
+            margin: 10px 0;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .back-link {
+            margin-top: 15px;
+        }
+
+        .back-link a {
+            text-decoration: none;
+            color: #007bff;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .back-link a:hover {
+            color: #0056b3;
+        }
+
+        /* Flash messages */
+        .flash-messages {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 600px;
+            z-index: 9999;
+            padding: 10px 20px;
+        }
+
+        .flash-message {
+            padding: 10px 20px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            animation: slide-down 0.5s ease;
+        }
+
+        .flash-message.success {
+            background-color: #28a745;
+            color: #fff;
+        }
+
+        .flash-message.danger {
+            background-color: #dc3545;
+            color: #fff;
+        }
+
+        /* Animations */
+        @keyframes slide-down {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+    <script>
+        async function checkSchedule() {
+            const subjectSelect = document.getElementById('subject');
+            const takeAttendanceButton = document.querySelector('button[type="submit"]');
+            const feedback = document.getElementById('feedback');
+
+            if (!subjectSelect.value) {
+                takeAttendanceButton.disabled = true;
+                feedback.textContent = "Please select a subject and section.";
+                return;
+            }
+
+            // Extract subject and section from the dropdown value
+            const [subjectCode, section] = subjectSelect.value.split('|');
+
+            try {
+                // Send a POST request to the backend to check the schedule
+                const response = await fetch('/check_schedule', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ subject_id: subjectCode, section: section })
+                });
+
+                const result = await response.json();
+
+                if (result.is_allowed) {
+                    takeAttendanceButton.disabled = false;
+                    feedback.textContent = "You can take attendance for this subject and section.";
+                } else {
+                    takeAttendanceButton.disabled = true;
+                    feedback.textContent = "Attendance is not allowed at this time.";
+                }
+            } catch (error) {
+                console.error("Error checking schedule:", error);
+                feedback.textContent = "Error checking schedule. Please try again.";
+                takeAttendanceButton.disabled = true;
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class='logo'>
+            <img src="{{ url_for('static', filename='images/take_attendance.png') }}" alt="Attendance Icon">
+        </div>
+        <h2>Face Recognition Attendance</h2>
+        <form method="POST" action="{{ url_for('face_recognition') }}">
+            <label for="subject">Select Subject and Section</label>
+            <select id="subject" name="subject" class="form-select" required onchange="checkSchedule()">
+                <option value="">-- Select Subject and Section --</option>
+                {% for subject in subjects %}
+                    <option value="{{ subject.SubjectCode }}|{{ subject.Section }}">
+                        {{ subject.SubjectCode }} ({{ subject.Section }})
+                    </option>
+                {% endfor %}
+            </select>
+
+            <p id="feedback" class="feedback">Please select a subject and section to proceed.</p>
+
+            <button type="submit" class="btn btn-primary" disabled>Take Attendance</button>
+        </form>
+
+        <div class="back-link">
+            <a href="{% if session['role'] == 'admin' %}{{ url_for('admin_dashboard') }}{% elif session['role'] == 'lecturer' %}{{ url_for('lecturer_dashboard') }}{% else %}{{ url_for('index') }}{% endif %}" class="btn btn-secondary">
+                ← Back to Home
+            </a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+    </div>
+</body>
+</html>

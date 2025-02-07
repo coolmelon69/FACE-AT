@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Process</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        h2 {
+            margin-top: 20px;
+            color: #444;
+        }
+
+        .camera-feed {
+            margin: 20px auto;
+            width: 80%;
+            max-width: 600px;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-container {
+            margin: 20px auto;
+            width: 80%;
+            max-width: 600px;
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            width: 0;
+            height: 100%;
+            background-color: #007bff;
+            transition: width 0.2s ease-in-out;
+        }
+
+        .countdown {
+            margin-top: 10px;
+            font-size: 16px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h2>Capturing Images for {{ name }} (SID: {{ sid }})</h2>
+
+    <!-- Camera feed -->
+    <div class="camera-feed">
+        <img id="video-feed" src="{{ url_for('video_feed', sid=sid, name=name) }}" width="100%">
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <!-- Countdown timer -->
+    <div class="countdown" id="countdown">Time Remaining: 20 seconds</div>
+
+    <script>
+        const totalImages = 20; // Total number of images to capture
+        const captureTime = 10; // Total process time in seconds
+        const progressBar = document.getElementById("progress-bar");
+        const countdown = document.getElementById("countdown");
+        let currentTime = captureTime;
+
+        // Update the progress bar and countdown
+        function updateProgress() {
+            currentTime--;
+
+            // Update progress bar width
+            const progressPercentage = ((captureTime - currentTime) / captureTime) * 100;
+            progressBar.style.width = progressPercentage + "%";
+
+            // Update countdown text
+            countdown.textContent = `Time Remaining: ${currentTime} seconds`;
+
+            // Redirect when complete
+            if (currentTime <= 0) {
+                clearInterval(interval);
+                window.location.href = "{{ url_for('registration_complete') }}";
+            }
+        }
+
+        // Start the countdown and progress bar
+        const interval = setInterval(updateProgress, 1000);
+    </script>
+</body>
+</html>

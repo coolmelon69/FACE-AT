@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Attendance</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #f3f4f6, #ffffff);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 960px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px 30px;
+            text-align: center;
+        }
+        h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+        th {
+            background-color: #007bff;
+            color: #fff;
+            font-weight: 500;
+        }
+        td {
+            background-color: #f9f9f9;
+        }
+        tr:nth-child(even) td {
+            background-color: #f1f3f5;
+        }
+        tr:hover td {
+            background-color: #e7f1ff;
+        }
+        /* Color coding for attendance percentage cells */
+        .attendance-high {
+            background-color: #d4edda; /* Green for 80% and above */
+            color: #155724; /* Dark green text */
+        }
+        .attendance-medium {
+            background-color: #fff3cd; /* Orange for 31% - 80% */
+            color: #856404; /* Dark orange text */
+        }
+        .attendance-low {
+            background-color: #f8d7da; /* Red for 30% and below */
+            color: #721c24; /* Dark red text */
+        }
+        .back-link {
+            margin-top: 20px;
+        }
+        .back-link a {
+            color: #007bff;
+            font-weight: 500;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+        .back-link a:hover {
+            color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Student Performance Attendance for {{ subject_code }}</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Student ID</th>
+                    <th>Student Name</th>
+                    <th>Subject Name</th>
+                    <th>Total Classes</th>
+                    <th>Classes Attended</th>
+                    <th>Attendance Percentage</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in attendance %}
+                    <tr>
+                        <td>{{ record.StudentID }}</td>
+                        <td>{{ record.StudentName }}</td>
+                        <td>{{ record.SubjectName }}</td>
+                        <td>{{ record.TotalClasses }}</td>
+                        <td>{{ record.ClassesAttended }}</td>
+                        <!-- Apply color only to the attendance percentage cell -->
+                        <td class="{% if record.AttendancePercentage >= 80 %}attendance-high
+                                    {% elif record.AttendancePercentage > 30 %}attendance-medium
+                                    {% else %}attendance-low{% endif %}">
+                            {{ record.AttendancePercentage or 0 }}%
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="back-link">
+            <a href="{{ url_for('choose_subject') }}">← Back</a>
+        </div>
+    </div>
+</body>
+</html>
